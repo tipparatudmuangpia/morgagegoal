@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เส้นทางสู่บ้านปลอดหนี้</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF5EA;
+    --cream-2:#F4EAD8;
+    --ink:#22332A;
+    --ink-soft:#4A5A50;
+    --green:#2E7D5B;
+    --green-deep:#1F4D3A;
+    --gold:#C5872B;
+    --gold-soft:#E4B65A;
+    --terra:#B5512C;
+    --surface:#FFFDF8;
+    --line:#E6DAC4;
+    --shadow:0 10px 40px -18px rgba(34,51,42,.45);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Sarabun',sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(228,182,90,.20), transparent 60%),
+      radial-gradient(900px 500px at -5% 110%, rgba(46,125,91,.16), transparent 55%),
+      var(--cream);
+    min-height:100vh;
+    line-height:1.5;
+    padding:clamp(16px,4vw,48px);
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;z-index:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{max-width:1080px;margin:0 auto;position:relative;z-index:1}
+
+  header{display:flex;align-items:center;gap:18px;margin-bottom:6px}
+  .house{flex:0 0 auto;width:58px;height:58px;display:grid;place-items:center;
+    background:linear-gradient(145deg,var(--green),var(--green-deep));
+    border-radius:18px;box-shadow:var(--shadow)}
+  .house svg{width:32px;height:32px;stroke:var(--gold-soft);fill:none;stroke-width:2.2}
+  h1{font-family:'Mitr',sans-serif;font-weight:500;font-size:clamp(1.5rem,4vw,2.3rem);
+    letter-spacing:.3px;color:var(--ink)}
+  .sub{color:var(--ink-soft);font-size:.98rem;margin:2px 0 26px 76px}
+  @media(max-width:560px){.sub{margin-left:0}}
+
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:22px;align-items:start}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:22px;
+    box-shadow:var(--shadow);padding:24px}
+  .card h2{font-family:'Mitr',sans-serif;font-weight:500;font-size:1.05rem;
+    color:var(--green-deep);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+  .card h2::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--gold)}
+
+  .field{margin-bottom:18px}
+  .field label{display:block;font-size:.86rem;font-weight:600;color:var(--ink-soft);margin-bottom:6px}
+  .field .hint{font-weight:400;font-size:.76rem;color:var(--terra)}
+  .input-money{position:relative}
+  .input-money input{width:100%;font-family:'Sarabun';font-size:1.18rem;font-weight:600;
+    color:var(--ink);background:var(--cream);border:1.5px solid var(--line);border-radius:12px;
+    padding:11px 52px 11px 14px;outline:none;transition:.15s;font-variant-numeric:tabular-nums}
+  .input-money input:focus{border-color:var(--green);background:#fff;
+    box-shadow:0 0 0 3px rgba(46,125,91,.12)}
+  .input-money .unit{position:absolute;right:14px;top:50%;transform:translateY(-50%);
+    font-size:.82rem;color:var(--ink-soft);pointer-events:none}
+
+  .slider-row{display:flex;align-items:center;gap:12px;margin-top:6px}
+  input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:6px;border-radius:6px;
+    background:linear-gradient(90deg,var(--gold-soft),var(--cream-2));outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+    background:var(--gold);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--gold);
+    border:3px solid #fff;cursor:pointer}
+
+  .btn-reset{width:100%;margin-top:6px;padding:10px;border:1.5px dashed var(--line);background:transparent;
+    color:var(--ink-soft);border-radius:12px;font-family:'Sarabun';font-size:.86rem;cursor:pointer;transition:.15s}
+  .btn-reset:hover{border-color:var(--terra);color:var(--terra)}
+
+  /* result cards */
+  .results{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:22px}
+  @media(max-width:560px){.results{grid-template-columns:1fr}}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;
+    box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .stat::after{content:"";position:absolute;right:-30px;top:-30px;width:90px;height:90px;border-radius:50%;
+    background:radial-gradient(circle,rgba(197,135,43,.14),transparent 70%)}
+  .stat .k{font-size:.82rem;color:var(--ink-soft);font-weight:600;margin-bottom:6px}
+  .stat .v{font-family:'Mitr',sans-serif;font-weight:500;font-size:1.85rem;color:var(--ink);
+    line-height:1.1;font-variant-numeric:tabular-nums}
+  .stat .v small{font-size:.95rem;color:var(--ink-soft);font-family:'Sarabun';font-weight:500}
+  .stat.hero{grid-column:1/-1;background:linear-gradient(140deg,var(--green-deep),var(--green))}
+  .stat.hero .k,.stat.hero .v{color:#fff}
+  .stat.hero .v{font-size:2.5rem}
+  .stat.hero .v small{color:rgba(255,255,255,.85)}
+  .stat.terra .v{color:var(--terra)}
+
+  .save{background:linear-gradient(135deg,#FFF6E2,#FBEBCE);border:1px solid #EEDCB5;border-radius:18px;
+    padding:18px 20px;margin-bottom:22px}
+  .save .head{font-family:'Mitr';font-weight:500;color:var(--gold);margin-bottom:10px;font-size:1rem;
+    display:flex;align-items:center;gap:8px}
+  .save .savegrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:480px){.save .savegrid{grid-template-columns:1fr}}
+  .save .item .num{font-family:'Mitr';font-size:1.5rem;font-weight:500;color:var(--green-deep);font-variant-numeric:tabular-nums}
+  .save .item .lab{font-size:.82rem;color:var(--ink-soft)}
+  .save.empty{display:none}
+
+  .chartcard{padding:24px}
+  .chartcard .wrap-c{position:relative;height:300px}
+
+  .warn{background:#FCEAE2;border:1px solid #E9B79F;color:var(--terra);border-radius:16px;
+    padding:16px 18px;margin-bottom:22px;font-size:.92rem;display:none}
+  .warn.show{display:block}
+
+  footer{margin-top:26px;font-size:.78rem;color:var(--ink-soft);text-align:center;line-height:1.7}
+  .saved-flag{font-size:.74rem;color:var(--green);text-align:right;margin-top:4px;height:14px;transition:.3s;opacity:0}
+  .saved-flag.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="house">
+      <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
+    </div>
+    <div>
+      <h1>เส้นทางสู่บ้านปลอดหนี้</h1>
+    </div>
+  </header>
+  <p class="sub">ปรับตัวเลขได้เอง คำนวณให้ทันที — บันทึกค่าล่าสุดไว้ให้อัตโนมัติ</p>
+
+  <div class="grid">
+    <!-- INPUT PANEL -->
+    <div class="card">
+      <h2>ข้อมูลของฉัน</h2>
+
+      <div class="field">
+        <label>ยอดเงินต้นคงเหลือ</label>
+        <div class="input-money">
+          <input type="text" id="balance" inputmode="numeric">
+          <span class="unit">บาท</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>อัตราดอกเบี้ยต่อปี <span class="hint">← ใส่ค่าจริงจากใบแจ้งยอดธนาคาร</span></label>
+        <div class="input-money">
+          <input type="text" id="rate" inputmode="decimal">
+          <span class="unit">% ต่อปี</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>ค่างวดที่จ่ายต่อเดือน</label>
+        <div class="input-money">
+          <input type="text" id="payment" inputmode="numeric">
+          <span class="unit">บาท</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>จ่ายเพิ่ม (โปะต้น) ต่อเดือน</label>
+        <div class="input-money">
+          <input type="text" id="extra" inputmode="numeric">
+          <span class="unit">บาท</span>
+        </div>
+        <div class="slider-row">
+          <input type="range" id="extraSlider" min="0" max="30000" step="500">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>เริ่มนับจากเดือน</label>
+        <div class="input-money">
+          <input type="month" id="start">
+        </div>
+      </div>
+
+      <button class="btn-reset" id="reset">↺ คืนค่าเริ่มต้น</button>
+      <div class="saved-flag" id="savedFlag">✓ บันทึกแล้ว</div>
+    </div>
+
+    <!-- RESULTS -->
+    <div>
+      <div class="warn" id="warn"></div>
+
+      <div class="results">
+        <div class="stat hero">
+          <div class="k">อีกกี่ปีจะปลอดหนี้ (ตามที่จ่ายตอนนี้)</div>
+          <div class="v" id="timeLeft">–</div>
+        </div>
+        <div class="stat">
+          <div class="k">ปลอดหนี้ประมาณ</div>
+          <div class="v" id="payoffDate">–</div>
+        </div>
+        <div class="stat">
+          <div class="k">จำนวนงวดที่เหลือ</div>
+          <div class="v" id="months">–</div>
+        </div>
+        <div class="stat terra">
+          <div class="k">ดอกเบี้ยรวมที่จะจ่ายต่อจากนี้</div>
+          <div class="v" id="totalInt">–</div>
+        </div>
+        <div class="stat">
+          <div class="k">งวดนี้: เป็นเงินต้น / ดอกเบี้ย</div>
+          <div class="v" id="split" style="font-size:1.25rem">–</div>
+        </div>
+      </div>
+
+      <div class="save empty" id="saveBox">
+        <div class="head">🌱 ผลของการโปะเพิ่ม</div>
+        <div class="savegrid">
+          <div class="item"><div class="num" id="timeSaved">–</div><div class="lab">ปลอดหนี้เร็วขึ้น</div></div>
+          <div class="item"><div class="num" id="intSaved">–</div><div class="lab">ประหยัดดอกเบี้ยได้ (บาท)</div></div>
+        </div>
+      </div>
+
+      <div class="card chartcard">
+        <h2>เงินต้นคงเหลือลดลงตามเวลา</h2>
+        <div class="wrap-c"><canvas id="chart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    ตัวเลขเป็นการประมาณการจากดอกเบี้ยแบบลดต้นลดดอก (effective rate) — สินเชื่อบ้านไทยส่วนใหญ่เป็นอัตราลอยตัว (MRR)
+    ที่อาจเปลี่ยนได้ จึงควรอัปเดตอัตราดอกเบี้ยจริงเป็นระยะ · เครื่องมือนี้ช่วยคำนวณเบื้องต้น ไม่ใช่คำแนะนำทางการเงิน
+  </footer>
+</div>
+
+<script>
+const DEFAULTS = { balance:1569000, rate:6.5, payment:15900, extra:0, start:null };
+const $ = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString('th-TH');
+const parse = s => parseFloat(String(s).replace(/[^0-9.]/g,'')) || 0;
+
+let chart;
+
+function currentMonthStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
+
+/* ---------- amortization ---------- */
+function simulate(balance, annualPct, payment){
+  const i = annualPct/100/12;
+  const out = {months:0,totalInterest:0,feasible:true,balances:[balance]};
+  if(balance<=0){return out;}
+  if(payment<=0){out.feasible=false;return out;}
+  const firstInterest = balance*i;
+  if(i>0 && payment<=firstInterest){out.feasible=false;out.firstInterest=firstInterest;return out;}
+  let bal=balance,m=0,ti=0;
+  while(bal>0 && m<2400){
+    m++;
+    const interest=bal*i;
+    let principal=payment-interest;
+    if(principal>=bal){ti+=interest;bal=0;}
+    else{bal-=principal;ti+=interest;}
+    out.balances.push(Math.max(bal,0));
+  }
+  out.months=m;out.totalInterest=ti;
+  return out;
+}
+
+function addMonths(ym, n){
+  const [y,mo]=ym.split('-').map(Number);
+  const d=new Date(y,mo-1+n,1);
+  const thMonths=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return thMonths[d.getMonth()]+' '+(d.getFullYear()+543);
+}
+
+function yearMonthLabel(m){
+  const y=Math.floor(m/12), mm=m%12;
+  if(y===0) return mm+' เดือน';
+  if(mm===0) return y+' ปี';
+  return y+' ปี '+mm+' เดือน';
+}
+
+/* ---------- main compute ---------- */
+function compute(){
+  const balance=parse($('balance').value);
+  const rate=parse($('rate').value);
+  const basePay=parse($('payment').value);
+  const extra=parse($('extra').value);
+  const start=$('start').value || currentMonthStr();
+
+  const warn=$('warn');
+  const totalPay=basePay+extra;
+
+  const base=simulate(balance,rate,basePay);
+  const cur=simulate(balance,rate,totalPay);
+
+  if(!cur.feasible){
+    warn.classList.add('show');
+    warn.innerHTML = totalPay<=0
+      ? 'กรุณาใส่ค่างวดต่อเดือนให้มากกว่า 0'
+      : 'ค่างวดที่จ่ายยัง<strong>น้อยกว่าดอกเบี้ยรายเดือน</strong> (ประมาณ '+fmt(cur.firstInterest||0)+' บาท/เดือน) — ยอดหนี้จะไม่ลดลง ต้องเพิ่มค่างวดหรือลดดอกเบี้ย';
+    $('timeLeft').textContent='ยังไม่หมด';
+    $('payoffDate').textContent='–';$('months').textContent='–';
+    $('totalInt').textContent='–';$('split').textContent='–';
+    drawChart([],start);
+    return;
+  }
+  warn.classList.remove('show');
+
+  $('timeLeft').textContent = yearMonthLabel(cur.months);
+  $('payoffDate').textContent = addMonths(start,cur.months);
+  $('months').innerHTML = fmt(cur.months)+' <small>งวด</small>';
+  $('totalInt').textContent = fmt(cur.totalInterest)+' ฿';
+
+  // this-month split
+  const i=rate/100/12;
+  const interestNow=balance*i;
+  const principalNow=Math.max(totalPay-interestNow,0);
+  $('split').innerHTML='<span style="color:var(--green)">'+fmt(principalNow)+'</span> / <span style="color:var(--terra)">'+fmt(interestNow)+'</span>';
+
+  // savings box
+  const box=$('saveBox');
+  if(extra>0 && base.feasible){
+    box.classList.remove('empty');
+    $('timeSaved').textContent=yearMonthLabel(base.months-cur.months);
+    $('intSaved').textContent=fmt(base.totalInterest-cur.totalInterest);
+  }else{
+    box.classList.add('empty');
+  }
+
+  drawChart(cur.balances,start,extra>0?base.balances:null);
+}
+
+/* ---------- chart ---------- */
+function drawChart(balances,start,baseBalances){
+  const ctx=$('chart').getContext('2d');
+  const labels=balances.map((_,idx)=>{
+    if(idx%12===0){const [y]=start.split('-').map(Number);return (y+543)+Math.floor(idx/12);}
+    return '';
+  });
+  // relabel x as calendar years
+  const [sy,sm]=start.split('-').map(Number);
+  const xlabels=balances.map((_,idx)=>{
+    const d=new Date(sy,sm-1+idx,1);
+    return (idx%12===0)? (d.getFullYear()+543).toString() : '';
+  });
+  const data={labels:xlabels,datasets:[]};
+  if(baseBalances){
+    data.datasets.push({label:'จ่ายปกติ (ไม่โปะ)',data:baseBalances,borderColor:'#C9B89A',
+      backgroundColor:'transparent',borderDash:[6,5],borderWidth:2,pointRadius:0,tension:.25});
+  }
+  data.datasets.push({label:'แผนของฉันตอนนี้',data:balances,borderColor:'#2E7D5B',
+    backgroundColor:(c)=>{const g=c.chart.ctx.createLinearGradient(0,0,0,300);
+      g.addColorStop(0,'rgba(46,125,91,.30)');g.addColorStop(1,'rgba(46,125,91,0)');return g;},
+    fill:true,borderWidth:3,pointRadius:0,tension:.25});
+
+  if(chart)chart.destroy();
+  chart=new Chart(ctx,{type:'line',data,options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:!!baseBalances,labels:{font:{family:'Sarabun',size:12},color:'#4A5A50',boxWidth:18}},
+      tooltip:{callbacks:{title:items=>{const idx=items[0].dataIndex;const d=new Date(sy,sm-1+idx,1);
+        const M=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+        return M[d.getMonth()]+' '+(d.getFullYear()+543);},
+        label:c=>'คงเหลือ '+fmt(c.parsed.y)+' ฿'},
+        bodyFont:{family:'Sarabun'},titleFont:{family:'Sarabun'}}},
+    scales:{
+      y:{ticks:{callback:v=>(v/1000000).toFixed(1)+' ล.',font:{family:'Sarabun'},color:'#4A5A50'},
+        grid:{color:'#EEE4D0'},beginAtZero:true},
+      x:{ticks:{font:{family:'Sarabun'},color:'#4A5A50',autoSkip:false,maxRotation:0},grid:{display:false}}
+    }
+  }});
+}
+
+/* ---------- formatting on input ---------- */
+function attachMoney(id){
+  const el=$(id);
+  el.addEventListener('input',()=>{
+    const caretEnd = el.selectionStart===el.value.length;
+    const v=parse(el.value);
+    el.value = v? v.toLocaleString('th-TH'):'';
+    if(caretEnd){el.selectionStart=el.selectionEnd=el.value.length;}
+    if(id==='extra'){$('extraSlider').value=Math.min(v,30000);}
+    compute();save();
+  });
+}
+
+/* ---------- persistence ---------- */
+async function save(){
+  const state={
+    balance:parse($('balance').value),rate:parse($('rate').value),
+    payment:parse($('payment').value),extra:parse($('extra').value),
+    start:$('start').value
+  };
+  try{
+    await window.storage.set('loanPlan',JSON.stringify(state),false);
+    const f=$('savedFlag');f.classList.add('show');clearTimeout(window._ft);
+    window._ft=setTimeout(()=>f.classList.remove('show'),1200);
+  }catch(e){/* ignore if storage unavailable */}
+}
+
+function setVals(s){
+  $('balance').value=s.balance?s.balance.toLocaleString('th-TH'):'';
+  $('rate').value=s.rate||'';
+  $('payment').value=s.payment?s.payment.toLocaleString('th-TH'):'';
+  $('extra').value=s.extra?s.extra.toLocaleString('th-TH'):'0';
+  $('extraSlider').value=Math.min(s.extra||0,30000);
+  $('start').value=s.start||currentMonthStr();
+}
+
+async function load(){
+  let s={...DEFAULTS};
+  try{
+    const r=await window.storage.get('loanPlan',false);
+    if(r&&r.value){s={...s,...JSON.parse(r.value)};}
+  }catch(e){/* first run */}
+  if(!s.start)s.start=currentMonthStr();
+  setVals(s);
+  compute();
+}
+
+/* ---------- wire up ---------- */
+['balance','payment','extra'].forEach(attachMoney);
+$('rate').addEventListener('input',()=>{
+  // อนุญาตให้ใช้จุลภาคเป็นจุดทศนิยมได้ และไม่จัดรูปแบบเพื่อให้พิมพ์ 3.7 ได้
+  if($('rate').value.includes(',')){
+    const p=$('rate').selectionStart;
+    $('rate').value=$('rate').value.replace(',','.');
+    $('rate').selectionStart=$('rate').selectionEnd=p;
+  }
+  compute();save();
+});
+$('start').addEventListener('change',()=>{compute();save();});
+$('extraSlider').addEventListener('input',()=>{
+  $('extra').value=parse($('extraSlider').value).toLocaleString('th-TH');
+  compute();save();
+});
+$('reset').addEventListener('click',()=>{
+  setVals({...DEFAULTS,start:currentMonthStr()});compute();save();
+});
+
+load();
+</script>
+</body>
+</html>
